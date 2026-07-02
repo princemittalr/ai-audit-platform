@@ -1,0 +1,56 @@
+name: AI Audit
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run audit
+        run: npm run dev scan .
+
+      - name: Read score
+        id: score
+        run: |
+          SCORE=$(node -p "require('./output/audit-report.json').summary.score")
+          CRITICAL=$(node -p "require('./output/audit-report.json').summary.critical")
+          HIGH=$(node -p "require('./output/audit-report.json').summary.high")
+          echo "score=$SCORE" >> "$GITHUB_OUTPUT"
+          echo "critical=$CRITICAL" >> "$GITHUB_OUTPUT"
+          echo "high=$HIGH" >> "$GITHUB_OUTPUT"
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const score = "${{ steps.score.outputs.score }}";
+            const critical = "${{ steps.score.outputs.critical }}";
+            const high = "${{ steps.score.outputs.high }}";
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `**AI Audit Score: ${score}/100**\n\nCritical: ${critical} | High: ${high}\n\nFull report available in the workflow artifacts.`
+            });
+
+      - name: Fail on critical findings
+        if: steps.score.outputs.critical != '0'
+        run: |
+          echo "Critical findings present — failing build."
+          exit 1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: audit-report
+          path: output/audit-report.json
