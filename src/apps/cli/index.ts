@@ -7,6 +7,7 @@ import path from "path";
 import { runPipeline } from "../../packages/pipeline/pipeline.js";
 import { generateMarkdownPackage } from "../../packages/exporters/markdownPackage.js";
 import { exportPrompts } from "../../packages/exporters/promptExporter.js";
+import { updateBaseline } from "../../packages/intelligence/baselineTracker.js";
 
 const program = new Command();
 
@@ -53,6 +54,24 @@ program
             `\nScore: ${score}/100  (critical: ${critical}, high: ${high}, medium: ${medium}, low: ${low})`
           )
         );
+
+        const comparison = await updateBaseline("output", repoPath, {
+          timestamp: new Date().toISOString(),
+          score,
+          critical,
+          high,
+          medium,
+          low
+        });
+
+        if (comparison.scoreDelta !== null) {
+          const delta = comparison.scoreDelta;
+          const arrow = delta > 0 ? "↑" : delta < 0 ? "↓" : "→";
+          const color = delta > 0 ? chalk.green : delta < 0 ? chalk.red : chalk.gray;
+          console.log(
+            color(`${arrow} ${delta > 0 ? "+" : ""}${delta} since last run (was ${comparison.previous!.score}/100)`)
+          );
+        }
       }
 
       console.log(chalk.green("\nAudit completed.\n"));

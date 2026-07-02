@@ -3,7 +3,47 @@ import assert from "node:assert/strict";
 
 import { calculateScore } from "../intelligence/scoreEngine.js";
 import { resolveImportPath, isFrameworkEntryFile } from "../graph/pathResolver.js";
+import { findCircularDependencies } from "../analyzers/circularDependencyAnalyzer.js";
 import { findUnusedComponents } from "../analyzers/unusedComponentAnalyzer.js";
+
+test("findCircularDependencies: detects direct A<->B cycle", () => {
+  const graph: KnowledgeGraph = {
+    nodes: [],
+    edges: [
+      { from: "a.ts", to: "b.ts", relation: "imports" },
+      { from: "b.ts", to: "a.ts", relation: "imports" }
+    ]
+  };
+  const result = findCircularDependencies(graph);
+  assert.equal(result.length, 1);
+});
+
+test("findCircularDependencies: detects long A->B->C->A cycle", () => {
+  const graph: KnowledgeGraph = {
+    nodes: [],
+    edges: [
+      { from: "a.ts", to: "b.ts", relation: "imports" },
+      { from: "b.ts", to: "c.ts", relation: "imports" },
+      { from: "c.ts", to: "a.ts", relation: "imports" }
+    ]
+  };
+  const result = findCircularDependencies(graph);
+  assert.equal(result.length, 1);
+  assert.ok(result[0].path.includes("a.ts"));
+  assert.ok(result[0].path.includes("b.ts"));
+  assert.ok(result[0].path.includes("c.ts"));
+});
+
+test("findCircularDependencies: no false positive on acyclic chain", () => {
+  const graph: KnowledgeGraph = {
+    nodes: [],
+    edges: [
+      { from: "a.ts", to: "b.ts", relation: "imports" },
+      { from: "b.ts", to: "c.ts", relation: "imports" }
+    ]
+  };
+  assert.deepEqual(findCircularDependencies(graph), []);
+});
 import { Finding } from "../models/finding.js";
 import { KnowledgeGraph } from "../graph/types.js";
 

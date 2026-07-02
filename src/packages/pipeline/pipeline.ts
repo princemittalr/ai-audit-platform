@@ -1,6 +1,7 @@
 import { buildContext } from "../context/contextBuilder.js";
 import { buildKnowledgeGraph } from "../graph/index.js";
 import { generateFindings } from "../analyzers/findingEngine.js";
+import { applyAuditIgnore } from "../analyzers/auditIgnore.js";
 
 import { buildReport } from "../report/builder.js";
 
@@ -14,10 +15,13 @@ export async function runPipeline(
 
   const graph = await buildKnowledgeGraph(repository);
 
-  const findings = generateFindings(
+  let findings = await generateFindings(
     audit.analysis,
-    graph
+    graph,
+    repository
   );
+
+  findings = await applyAuditIgnore(repository, findings);
 
   const pipeline: PipelineContext = {
 

@@ -23,7 +23,7 @@ export async function generateMarkdownPackage(
     repositoryIndex
   );
 
-  const findings = generateFindings(context.analysis);
+  const findings = await generateFindings(context.analysis);
 
   const findingsMarkdown =
     findings.length === 0

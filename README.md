@@ -19,16 +19,22 @@ npm run dev scan ../path/to/repo
 * Parses every `.ts`/`.tsx` file into an AST, extracts imports, components, functions, hooks
 * Builds a knowledge graph and **resolves import paths** (relative + `@/` aliases) to real files — not just string matching
 * Runs analyzers:
-  * **Circular dependency detection** — real cycles in the import graph
+  * **Circular dependency detection** — real DFS-based cycle detection over the import graph, catches cycles of any length (not just direct A↔B pairs)
   * **Unused component detection** — components never imported anywhere, excluding Next.js convention files (`layout.tsx`, `page.tsx`, `error.tsx`, etc. — these load by filename, not import)
+  * **Large file detection** — flags files over 300 lines as a maintainability smell
   * Basic architecture/config checks (missing middleware, no env files)
-* Scores the repo 0–100, weighted by severity, with per-tier caps so 40 minor findings don't drown out 2 critical ones
+* Every finding is tagged `HIGH` or `HEURISTIC` confidence — structural facts (a cycle exists) vs. pattern-based inference that can have false positives (unused-component detection can miss dynamic imports or re-exports)
+* Scores the repo 0–100, weighted by severity, with per-tier caps on HIGH/MEDIUM/LOW so 40 minor findings don't drown out 2 critical ones — CRITICAL findings are uncapped and dominate the score
+* Tracks score across runs per-repository (`output/audit-baseline.<hash>.json`) and shows the delta on each scan
+* Supports `.auditignore` (gitignore syntax) in the target repo to suppress known false positives without touching analyzer code
+* Ships a GitHub Action (`.github/workflows/audit.yml`) that runs the audit on PRs, comments the score, and fails the build on any critical finding
 * Outputs a Markdown audit package + JSON report + provider-specific prompts
 
 ```text
 output/
 ├── AI_AUDIT_PACKAGE.md   # full context dump for pasting into any LLM
 ├── audit-report.json     # { repository, summary: { score, critical, high, medium, low }, findings[] }
+├── audit-baseline.<hash>.json  # score history for this repo
 ├── chatgpt-prompt.md
 ├── claude-prompt.md
 └── gemini-prompt.md
@@ -44,7 +50,8 @@ $ npm run dev scan ../eduing-landing
 ✓ AI_AUDIT_PACKAGE.md
 ✓ audit-report.json
 
-Score: 79/100  (critical: 0, high: 0, medium: 1, low: 8)
+Score: 80/100  (critical: 0, high: 0, medium: 1, low: 8)
+→ 0 since last run (was 80/100)
 
 Audit completed.
 ```
