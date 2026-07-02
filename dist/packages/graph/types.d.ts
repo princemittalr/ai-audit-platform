@@ -1,12 +1,12 @@
 export interface GraphNode {
     id: string;
-    path: string;
-    type: string;
+    file: string;
+    type: "component" | "function" | "hook" | "file";
 }
 export interface GraphEdge {
     from: string;
     to: string;
-    relation: string;
+    relation: "imports" | "contains" | "uses";
 }
 export interface KnowledgeGraph {
     nodes: GraphNode[];
