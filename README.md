@@ -74,7 +74,28 @@ Covers score-weighting edge cases, import path resolution (relative + alias), an
 
 ## Not built yet
 
-Security/performance/accessibility analyzers, HTML/PDF export, CI integration, multi-language support beyond TS/JS. These are listed as future work, not shipped — the goal was a small set of analyzers that are actually correct over a longer list that mostly isn't.
+Security/performance/accessibility analyzers, HTML/PDF export, CI integration beyond the included GitHub Action, VS Code extension, multi-language support beyond TS/JS. These are real subprojects each — a parser per language, marketplace publishing, etc. — not flags to flip. Listed here instead of faked.
+
+## Other commands
+
+```bash
+# Only report findings touching files changed vs a git ref (default HEAD)
+npm run dev scan ../my-project --diff
+npm run dev scan ../my-project --diff main
+
+# Delete confirmed-unused component files. Dry-run by default.
+npm run dev fix ../my-project
+npm run dev fix ../my-project --apply
+
+# Ask an LLM to explain a specific finding using the real surrounding code.
+# Requires ANTHROPIC_API_KEY — without it, prints the plain finding instead
+# of pretending to call an API. This makes a real, billed API call when a
+# key is set.
+export ANTHROPIC_API_KEY=sk-ant-...
+npm run dev explain DEAD-003
+```
+
+`fix` only ever touches "Dead Code" findings — the one category where the fix (delete the file) is unambiguous. It won't touch circular-dependency or large-file findings; those need a judgment call.
 
 ## Stack
 

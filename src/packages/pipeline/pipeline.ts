@@ -7,8 +7,20 @@ import { buildReport } from "../report/builder.js";
 
 import { PipelineContext } from "./context.js";
 
+export interface RunPipelineOptions {
+  /**
+   * If provided, the final report's findings are filtered down to only
+   * those touching these files. Analysis (e.g. cycle detection) still runs
+   * over the whole repo — a cycle involving a changed file can only be
+   * found by seeing the whole graph — but the report only surfaces what's
+   * relevant to the diff.
+   */
+  scopeToFiles?: string[];
+}
+
 export async function runPipeline(
-  repository: string
+  repository: string,
+  options: RunPipelineOptions = {}
 ): Promise<PipelineContext> {
 
   const audit = await buildContext(repository);
@@ -22,6 +34,11 @@ export async function runPipeline(
   );
 
   findings = await applyAuditIgnore(repository, findings);
+
+  if (options.scopeToFiles) {
+    const scope = new Set(options.scopeToFiles);
+    findings = findings.filter(f => !f.file || scope.has(f.file));
+  }
 
   const pipeline: PipelineContext = {
 

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import { calculateScore } from "../intelligence/scoreEngine.js";
 import { resolveImportPath, isFrameworkEntryFile } from "../graph/pathResolver.js";
+import { autoFixDeadCode } from "../analyzers/autoFix.js";
 import { findCircularDependencies } from "../analyzers/circularDependencyAnalyzer.js";
 import { findUnusedComponents } from "../analyzers/unusedComponentAnalyzer.js";
 
@@ -107,6 +108,64 @@ test("isFrameworkEntryFile: recognizes Next.js convention files", () => {
   assert.equal(isFrameworkEntryFile("app/layout.tsx"), true);
   assert.equal(isFrameworkEntryFile("app/error.tsx"), true);
   assert.equal(isFrameworkEntryFile("components/Footer.tsx"), false);
+});
+
+test("autoFixDeadCode: dry-run reports would-delete without touching disk", async () => {
+  const os = await import("node:os");
+  const fsp = await import("node:fs/promises");
+  const fs = await import("fs-extra");
+  const path = await import("node:path");
+
+  const tmp = await fsp.mkdtemp(path.join(os.tmpdir(), "audit-fix-test-"));
+  const filePath = path.join(tmp, "orphan.tsx");
+  await fsp.writeFile(filePath, "export default function Orphan() { return null; }");
+
+  const findings: Finding[] = [{
+    id: "DEAD-001", severity: "LOW", category: "Dead Code",
+    title: "Unused component", description: "x", recommendation: "x",
+    file: "orphan.tsx"
+  }];
+
+  const results = await autoFixDeadCode(tmp, findings, false);
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].action, "would-delete");
+  assert.equal(await fs.pathExists(filePath), true);
+
+  await fs.remove(tmp);
+});
+
+test("autoFixDeadCode: apply=true actually deletes the file", async () => {
+  const os = await import("node:os");
+  const fsp = await import("node:fs/promises");
+  const fs = await import("fs-extra");
+  const path = await import("node:path");
+
+  const tmp = await fsp.mkdtemp(path.join(os.tmpdir(), "audit-fix-test-"));
+  const filePath = path.join(tmp, "orphan.tsx");
+  await fsp.writeFile(filePath, "export default function Orphan() { return null; }");
+
+  const findings: Finding[] = [{
+    id: "DEAD-001", severity: "LOW", category: "Dead Code",
+    title: "Unused component", description: "x", recommendation: "x",
+    file: "orphan.tsx"
+  }];
+
+  const results = await autoFixDeadCode(tmp, findings, true);
+
+  assert.equal(results[0].action, "deleted");
+  assert.equal(await fs.pathExists(filePath), false);
+
+  await fs.remove(tmp);
+});
+
+test("autoFixDeadCode: ignores non-dead-code findings", async () => {
+  const findings: Finding[] = [{
+    id: "ARCH-001", severity: "MEDIUM", category: "Architecture",
+    title: "Middleware not found", description: "x", recommendation: "x"
+  }];
+  const results = await autoFixDeadCode("/tmp", findings, false);
+  assert.deepEqual(results, []);
 });
 
 test("findUnusedComponents: excludes framework entry files even with no importers", () => {
