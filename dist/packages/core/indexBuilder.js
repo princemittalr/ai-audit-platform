@@ -1,6 +1,7 @@
 import fg from "fast-glob";
 import fs from "fs-extra";
 import path from "path";
+import { calculateImportance } from "./importanceScorer.js";
 const IGNORE = [
     "**/node_modules/**",
     "**/.git/**",
@@ -17,7 +18,7 @@ export async function buildRepositoryIndex(root) {
     });
     const files = [];
     let totalSize = 0;
-    for (const file of entries) {
+    for (const file of entries.sort()) {
         const absolute = path.join(root, file);
         const stat = await fs.stat(absolute);
         totalSize += stat.size;
@@ -25,9 +26,15 @@ export async function buildRepositoryIndex(root) {
             path: file,
             extension: path.extname(file),
             size: stat.size,
-            importance: 0
+            importance: calculateImportance({
+                path: file,
+                extension: path.extname(file),
+                size: stat.size,
+                importance: 0
+            })
         });
     }
+    files.sort((a, b) => b.importance - a.importance);
     return {
         root,
         files,
