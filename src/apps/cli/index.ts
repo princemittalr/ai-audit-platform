@@ -11,6 +11,8 @@ import { updateBaseline } from "../../packages/intelligence/baselineTracker.js";
 import { getChangedFiles } from "../../packages/core/gitDiff.js";
 import { autoFixDeadCode } from "../../packages/analyzers/autoFix.js";
 import { explainFinding } from "../../packages/intelligence/explainFinding.js";
+import { exportHtmlReport } from "../../packages/exporters/htmlReportExporter.js";
+import { exportPdfReport } from "../../packages/exporters/pdfReportExporter.js";
 
 const program = new Command();
 
@@ -58,6 +60,13 @@ program
       console.log(chalk.green("✓ claude-prompt.md"));
       console.log(chalk.green("✓ gemini-prompt.md"));
       console.log(chalk.green("✓ audit-report.json"));
+
+      if (pipeline.report) {
+        await exportHtmlReport("output", pipeline.report);
+        await exportPdfReport("output", pipeline.report);
+        console.log(chalk.green("✓ audit-report.html"));
+        console.log(chalk.green("✓ audit-report.pdf"));
+      }
 
       if (pipeline.report) {
         const { score, critical, high, medium, low } = pipeline.report.summary;

@@ -34,6 +34,8 @@ npm run dev scan ../path/to/repo
 output/
 ├── AI_AUDIT_PACKAGE.md   # full context dump for pasting into any LLM
 ├── audit-report.json     # { repository, summary: { score, critical, high, medium, low }, findings[] }
+├── audit-report.html     # shareable dark-themed report, opens in any browser
+├── audit-report.pdf      # same data, hand-built PDF layout (pdfkit, no browser dependency)
 ├── audit-baseline.<hash>.json  # score history for this repo
 ├── chatgpt-prompt.md
 ├── claude-prompt.md
@@ -74,7 +76,9 @@ Covers score-weighting edge cases, import path resolution (relative + alias), an
 
 ## Not built yet
 
-Security/performance/accessibility analyzers, HTML/PDF export, CI integration beyond the included GitHub Action, VS Code extension, multi-language support beyond TS/JS. These are real subprojects each — a parser per language, marketplace publishing, etc. — not flags to flip. Listed here instead of faked.
+Security/performance/accessibility analyzers, CI integration beyond the included GitHub Action, VS Code extension, multi-language support beyond TS/JS. These are real subprojects each — a parser per language, marketplace publishing, etc. — not flags to flip. Listed here instead of faked.
+
+Note on PDF: uses `pdfkit` (pure JS), not a headless-browser HTML-to-PDF conversion — layout is hand-built, not a render of the HTML report. Good enough for a shareable report, not pixel-identical to the HTML version.
 
 ## Other commands
 
