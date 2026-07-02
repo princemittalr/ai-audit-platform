@@ -1,4 +1,4 @@
-import { SourceCollection } from "../parser/sourceCollector.js";
+import type { SourceCollection } from "../parsers/sourceCollector.js";
 import {
   GraphNode,
   GraphEdge,
@@ -13,18 +13,15 @@ export function buildKnowledgeGraph(
   const edges: GraphEdge[] = [];
 
   for (const file of source.files) {
-
     nodes.push({
       id: file.path,
       path: file.path,
       type: file.extension.replace(".", "")
     });
-
   }
 
   return {
     nodes,
     edges
   };
-
 }
