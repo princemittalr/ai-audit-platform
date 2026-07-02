@@ -4,8 +4,10 @@ import chalk from "chalk";
 import { scanRepository } from "../core/scanner.js";
 import { detectFramework } from "../analyzers/frameworkDetector.js";
 import { analyzeProject } from "../analyzers/projectAnalyzer.js";
+
 import { generateProjectSummary } from "../exporters/projectSummary.js";
 import { generateFileTree } from "../exporters/fileTree.js";
+import { generateRouteMap } from "../exporters/routeMap.js";
 
 const program = new Command();
 
@@ -27,30 +29,27 @@ program
 
     console.log(chalk.green("Repository"));
     console.log(scan.root);
+
     console.log("");
 
     console.log(chalk.blue("Framework"));
     console.log(framework.framework);
-    console.log("");
 
     console.log(chalk.blue("Language"));
     console.log(framework.language);
-    console.log("");
 
     console.log(chalk.blue("Package Manager"));
     console.log(framework.packageManager);
-    console.log("");
 
     console.log(chalk.blue("CSS"));
     console.log(framework.css);
-    console.log("");
 
     console.log(chalk.blue("Package"));
     console.log(framework.packageName);
-    console.log("");
 
     console.log(chalk.blue("Version"));
     console.log(framework.version);
+
     console.log("");
 
     console.log(chalk.magenta("Project Intelligence"));
@@ -69,13 +68,7 @@ program
 
     console.log("");
 
-    console.log(chalk.yellow("Repository Statistics"));
-    console.log("--------------------------------");
-
-    console.log("Files            :", scan.totalFiles);
-    console.log("Folders          :", scan.totalDirectories);
-
-    console.log("");
+    console.log(chalk.yellow("Generating audit package...\n"));
 
     await generateProjectSummary("output", {
       repository: scan.root,
@@ -91,8 +84,14 @@ program
 
     await generateFileTree(repoPath, "output");
 
-    console.log(chalk.green("✓ Generated output/project-summary.md"));
-    console.log(chalk.green("✓ Generated output/file-tree.md"));
+    await generateRouteMap(repoPath, "output");
+
+    console.log(chalk.green("✓ project-summary.md"));
+    console.log(chalk.green("✓ file-tree.md"));
+    console.log(chalk.green("✓ route-map.md"));
+
+    console.log("");
+    console.log(chalk.green("Sprint 6 completed."));
   });
 
 program.parse();
