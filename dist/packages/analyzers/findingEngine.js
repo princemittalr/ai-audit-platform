@@ -2,6 +2,7 @@ export function generateFindings(analysis) {
     const findings = [];
     if (!analysis.middleware) {
         findings.push({
+            id: "ARCH-001",
             severity: "MEDIUM",
             category: "Architecture",
             title: "Middleware not found",
@@ -11,6 +12,7 @@ export function generateFindings(analysis) {
     }
     if (analysis.envFiles === 0) {
         findings.push({
+            id: "CONF-001",
             severity: "LOW",
             category: "Configuration",
             title: "No environment files",
@@ -20,6 +22,7 @@ export function generateFindings(analysis) {
     }
     if (analysis.components === 0) {
         findings.push({
+            id: "ARCH-002",
             severity: "HIGH",
             category: "Architecture",
             title: "No React components detected",
