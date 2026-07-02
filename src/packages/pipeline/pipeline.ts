@@ -15,7 +15,8 @@ export async function runPipeline(
   const graph = await buildKnowledgeGraph(repository);
 
   const findings = generateFindings(
-    audit.analysis
+    audit.analysis,
+    graph
   );
 
   const pipeline: PipelineContext = {

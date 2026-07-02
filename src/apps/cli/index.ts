@@ -1,7 +1,9 @@
 import { Command } from "commander";
 import chalk from "chalk";
+import fs from "fs-extra";
+import path from "path";
 
-import { buildContext } from "../../packages/context/contextBuilder.js";
+import { runPipeline } from "../../packages/pipeline/pipeline.js";
 import { generateMarkdownPackage } from "../../packages/exporters/markdownPackage.js";
 import { exportPrompts } from "../../packages/exporters/promptExporter.js";
 
@@ -21,19 +23,36 @@ program
 
       console.log(chalk.cyan("\n🔍 Building AI Audit Package...\n"));
 
-      const context = await buildContext(repoPath);
+      const pipeline = await runPipeline(repoPath);
 
       await generateMarkdownPackage(
         "output",
-        context
+        pipeline.audit
       );
 
       await exportPrompts("output");
+
+      await fs.ensureDir("output");
+      await fs.writeJson(
+        path.join("output", "audit-report.json"),
+        pipeline.report,
+        { spaces: 2 }
+      );
 
       console.log(chalk.green("✓ AI_AUDIT_PACKAGE.md"));
       console.log(chalk.green("✓ chatgpt-prompt.md"));
       console.log(chalk.green("✓ claude-prompt.md"));
       console.log(chalk.green("✓ gemini-prompt.md"));
+      console.log(chalk.green("✓ audit-report.json"));
+
+      if (pipeline.report) {
+        const { score, critical, high, medium, low } = pipeline.report.summary;
+        console.log(
+          chalk.yellow(
+            `\nScore: ${score}/100  (critical: ${critical}, high: ${high}, medium: ${medium}, low: ${low})`
+          )
+        );
+      }
 
       console.log(chalk.green("\nAudit completed.\n"));
 

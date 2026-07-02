@@ -1,8 +1,12 @@
 import { ProjectAnalysis } from "./projectAnalyzer.js";
 import { Finding } from "../models/finding.js";
+import { KnowledgeGraph } from "../graph/types.js";
+import { findCircularDependencies } from "./circularDependencyAnalyzer.js";
+import { findUnusedComponents } from "./unusedComponentAnalyzer.js";
 
 export function generateFindings(
-  analysis: ProjectAnalysis
+  analysis: ProjectAnalysis,
+  graph?: KnowledgeGraph
 ): Finding[] {
 
   const findings: Finding[] = [];
@@ -42,6 +46,40 @@ export function generateFindings(
       recommendation:
         "Verify repository structure or analyzer configuration."
     });
+  }
+
+  if (graph) {
+
+    const cycles = findCircularDependencies(graph);
+
+    for (const cycle of cycles) {
+      findings.push({
+        id: `DEP-${String(findings.length + 1).padStart(3, "0")}`,
+        severity: "HIGH",
+        category: "Dependencies",
+        title: "Circular dependency detected",
+        description: `Circular import between ${cycle.from} and ${cycle.to}.`,
+        recommendation:
+          "Break the cycle by extracting shared code into a separate module.",
+        file: cycle.from
+      });
+    }
+
+    const unused = findUnusedComponents(graph);
+
+    for (const component of unused) {
+      findings.push({
+        id: `DEAD-${String(findings.length + 1).padStart(3, "0")}`,
+        severity: "LOW",
+        category: "Dead Code",
+        title: "Unused component",
+        description: `Component "${component.component}" is never imported.`,
+        recommendation:
+          "Remove the component if unused, or verify it's exported for external use.",
+        file: component.file
+      });
+    }
+
   }
 
   return findings;
