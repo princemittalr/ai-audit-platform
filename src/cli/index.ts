@@ -4,6 +4,7 @@ import chalk from "chalk";
 import { scanRepository } from "../core/scanner.js";
 import { detectFramework } from "../analyzers/frameworkDetector.js";
 import { analyzeProject } from "../analyzers/projectAnalyzer.js";
+import { generateProjectSummary } from "../exporters/projectSummary.js";
 
 const program = new Command();
 
@@ -79,6 +80,22 @@ program
 
     console.log("Files            :", scan.totalFiles);
     console.log("Folders          :", scan.totalDirectories);
+
+    console.log("");
+
+    await generateProjectSummary("output", {
+      repository: scan.root,
+      framework: framework.framework,
+      language: framework.language,
+      packageManager: framework.packageManager,
+      css: framework.css,
+      packageName: framework.packageName,
+      version: framework.version,
+      files: scan.totalFiles,
+      folders: scan.totalDirectories,
+    });
+
+    console.log(chalk.green("✓ Generated output/project-summary.md"));
 
     console.log("");
   });
