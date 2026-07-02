@@ -2,25 +2,28 @@ import { Command } from "commander";
 import chalk from "chalk";
 import { buildContext } from "../../packages/context/contextBuilder.js";
 import { generateMarkdownPackage } from "../../packages/exporters/markdownPackage.js";
+import { exportPrompts } from "../../packages/exporters/promptExporter.js";
 const program = new Command();
 program
     .name("audit-ai")
     .description("AI Audit Platform")
-    .version("1.1.0");
+    .version("1.2.0");
 program
     .command("scan")
-    .description("Generate an AI-ready audit package")
     .argument("<path>", "Repository path")
     .action(async (repoPath) => {
     try {
         console.log(chalk.cyan("\n🔍 Building AI Audit Package...\n"));
         const context = await buildContext(repoPath);
         await generateMarkdownPackage("output", context);
-        console.log(chalk.green("✅ AI_AUDIT_PACKAGE.md generated"));
-        console.log(chalk.green("✅ Scan completed successfully"));
+        await exportPrompts("output");
+        console.log(chalk.green("✓ AI_AUDIT_PACKAGE.md"));
+        console.log(chalk.green("✓ chatgpt-prompt.md"));
+        console.log(chalk.green("✓ claude-prompt.md"));
+        console.log(chalk.green("✓ gemini-prompt.md"));
+        console.log(chalk.green("\nAudit completed.\n"));
     }
     catch (error) {
-        console.error(chalk.red("\n❌ Scan failed\n"));
         console.error(error);
         process.exit(1);
     }
