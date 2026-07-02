@@ -14,6 +14,8 @@ import {
   KnowledgeGraph
 } from "./types.js";
 
+import { resolveImportPath } from "./pathResolver.js";
+
 export async function buildKnowledgeGraph(
   root: string
 ): Promise<KnowledgeGraph> {
@@ -39,6 +41,8 @@ export async function buildKnowledgeGraph(
       ]
     }
   );
+
+  const knownFiles = new Set(files);
 
   for (const file of files) {
 
@@ -138,11 +142,17 @@ export async function buildKnowledgeGraph(
 
     for (const imp of extractImports(ast)) {
 
+      const resolved = resolveImportPath(
+        file,
+        imp.module,
+        knownFiles
+      );
+
       graph.edges.push({
 
         from: file,
 
-        to: imp.module,
+        to: resolved ?? imp.module,
 
         relation: "imports"
 

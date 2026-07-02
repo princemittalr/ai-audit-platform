@@ -1,4 +1,5 @@
 import { KnowledgeGraph } from "../graph/types.js";
+import { isFrameworkEntryFile } from "../graph/pathResolver.js";
 
 export interface UnusedComponent {
 
@@ -20,8 +21,12 @@ export function findUnusedComponents(
 
     .filter(component => {
 
+      if (isFrameworkEntryFile(component.file)) {
+        return false;
+      }
+
       const used = graph.edges.some(edge =>
-        edge.to === component.id &&
+        edge.to === component.file &&
         edge.relation === "imports"
       );
 
