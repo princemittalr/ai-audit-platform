@@ -1,1 +1,1 @@
-export * from "./sourceCollector.js";
+export * from "./typescriptParser.js";
