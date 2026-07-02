@@ -1,5 +1,5 @@
 import fg from "fast-glob";
-import path from "path";
+import { analyzeReactComponents } from "./reactComponentAnalyzer.js";
 
 export interface ProjectAnalysis {
   appRouter: boolean;
@@ -14,86 +14,91 @@ export interface ProjectAnalysis {
   configFiles: number;
 }
 
-export async function analyzeProject(root: string): Promise<ProjectAnalysis> {
-  const appRouter = await fg(["app/**/page.*"], { cwd: root }).then(r => r.length > 0);
+export async function analyzeProject(
+  root: string
+): Promise<ProjectAnalysis> {
 
-  const pagesRouter = await fg(["pages/**/*.{js,jsx,ts,tsx}"], {
-    cwd: root,
-  }).then(r => r.length > 0);
+  const reactComponents =
+    await analyzeReactComponents(root);
+
+  const appRouter = (
+    await fg(["app/**/page.*"], { cwd: root })
+  ).length > 0;
+
+  const pagesRouter = (
+    await fg(["pages/**/*.{ts,tsx,js,jsx}"], {
+      cwd: root
+    })
+  ).length > 0;
 
   const apiRoutes = (
-    await fg(
-      [
-        "app/**/route.{ts,js}",
-        "pages/api/**/*.{ts,js}",
-      ],
-      { cwd: root }
-    )
-  ).length;
-
-  const components = (
-    await fg(["components/**/*.{ts,tsx,js,jsx}"], {
-      cwd: root,
-    })
-  ).length;
-
-  const hooks = (
-    await fg(["**/use*.{ts,tsx,js,jsx}"], {
-      cwd: root,
-    })
-  ).length;
-
-  const contexts = (
-    await fg(["**/*context*.{ts,tsx,js,jsx}"], {
-      cwd: root,
-      caseSensitiveMatch: false,
+    await fg([
+      "app/**/route.{ts,js}",
+      "pages/api/**/*.{ts,js}"
+    ], {
+      cwd: root
     })
   ).length;
 
   const middleware = (
     await fg(["middleware.{ts,js}"], {
-      cwd: root,
+      cwd: root
     })
   ).length > 0;
 
   const publicAssets = (
     await fg(["public/**/*"], {
       cwd: root,
-      onlyFiles: true,
+      onlyFiles: true
     })
   ).length;
 
   const envFiles = (
     await fg([".env*"], {
-      cwd: root,
+      cwd: root
     })
   ).length;
 
   const configFiles = (
-    await fg(
-      [
-        "*.config.*",
-        "tsconfig.json",
-        "package.json",
-        "next.config.*",
-        "tailwind.config.*",
-      ],
-      {
-        cwd: root,
-      }
-    )
+    await fg([
+      "*.config.*",
+      "next.config.*",
+      "tailwind.config.*",
+      "tsconfig.json",
+      "package.json"
+    ], {
+      cwd: root
+    })
   ).length;
 
   return {
+
     appRouter,
+
     pagesRouter,
+
     apiRoutes,
-    components,
-    hooks,
-    contexts,
+
+    components: reactComponents.length,
+
+    hooks: reactComponents.reduce(
+      (sum, c) => sum + c.hookCount,
+      0
+    ),
+
+    contexts: reactComponents.reduce(
+      (sum, c) => sum + c.contextUsage,
+      0
+    ),
+
     middleware,
+
     publicAssets,
+
     envFiles,
-    configFiles,
+
+    configFiles
+
   };
+
 }
