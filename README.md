@@ -1,137 +1,78 @@
 # AI Audit Platform
 
-AI Audit Platform is an AI-powered static code analysis engine designed to help developers, engineering teams, and AI assistants understand software projects quickly and accurately.
+A CLI that scans a TypeScript/React/Next.js repository, builds a knowledge graph of its files, components, and imports, and produces an AI-ready audit package: a risk score, concrete findings, and prompts pre-loaded with repo context for ChatGPT, Claude, and Gemini.
 
-Instead of only scanning files, the platform builds repository intelligence, extracts architectural information, constructs a knowledge graph, runs engineering analyzers, and generates AI-ready audit packages for large language models.
+## Why
 
-## Vision
+Pasting a whole repo into an LLM chat for review is slow and imprecise. This tool does the mechanical part first — parse the AST, resolve imports, find dead code and circular dependencies, score the repo — so the LLM (or you) starts from findings instead of raw files.
 
-Enable AI systems to understand any software repository with engineering-level context before generating recommendations, reviews, or code.
-
-## Core Features
-
-* Repository scanning
-* Framework detection
-* Project intelligence extraction
-* AST-based source code parsing
-* Import and dependency analysis
-* Component extraction
-* Function extraction
-* Hook extraction
-* Knowledge graph generation
-* Engineering findings engine
-* AI-ready audit package generation
-* Prompt generation for multiple LLM providers
-* Repository summary generation
-* Route mapping
-* File tree generation
-* Extensible analyzer architecture
-
-## Architecture
-
-```text
-Repository
-      │
-      ▼
-Repository Scanner
-      │
-      ▼
-Project Analysis
-      │
-      ▼
-AST Parser
-      │
-      ▼
-Knowledge Graph
-      │
-      ▼
-Engineering Analyzers
-      │
-      ▼
-Findings
-      │
-      ▼
-Risk Scoring
-      │
-      ▼
-Recommendations
-      │
-      ▼
-Audit Report
-      │
-      ├── Markdown
-      ├── JSON
-      ├── HTML
-      └── AI Prompt Packages
-```
-
-## Current Capabilities
-
-* Detects project framework and technology stack
-* Analyzes repository structure
-* Extracts routes, components, hooks, and functions
-* Builds a repository knowledge graph
-* Produces engineering findings
-* Generates AI-ready project documentation
-* Creates prompts for ChatGPT, Claude, and Gemini
-
-## Planned Features
-
-* Security analyzer
-* Performance analyzer
-* Accessibility analyzer
-* Dependency analyzer
-* Circular dependency detection
-* Dead code detection
-* Large component detection
-* Bundle analysis
-* HTML reports
-* PDF reports
-* CI/CD integration
-* GitHub Action
-* VS Code extension
-* Multi-language support
-
-## Technology Stack
-
-* TypeScript
-* Node.js
-* Commander
-* Babel Parser
-* Fast Glob
-* fs-extra
-
-## Example
+## Install & run
 
 ```bash
 npm install
-
-npm run build
-
-npm run dev scan ../my-project
+npm run dev scan ../path/to/repo
 ```
 
-Generated output:
+## What it actually does today
+
+* Detects framework (Next.js/React), language, package metadata
+* Parses every `.ts`/`.tsx` file into an AST, extracts imports, components, functions, hooks
+* Builds a knowledge graph and **resolves import paths** (relative + `@/` aliases) to real files — not just string matching
+* Runs analyzers:
+  * **Circular dependency detection** — real cycles in the import graph
+  * **Unused component detection** — components never imported anywhere, excluding Next.js convention files (`layout.tsx`, `page.tsx`, `error.tsx`, etc. — these load by filename, not import)
+  * Basic architecture/config checks (missing middleware, no env files)
+* Scores the repo 0–100, weighted by severity, with per-tier caps so 40 minor findings don't drown out 2 critical ones
+* Outputs a Markdown audit package + JSON report + provider-specific prompts
 
 ```text
 output/
-├── AI_AUDIT_PACKAGE.md
+├── AI_AUDIT_PACKAGE.md   # full context dump for pasting into any LLM
+├── audit-report.json     # { repository, summary: { score, critical, high, medium, low }, findings[] }
 ├── chatgpt-prompt.md
 ├── claude-prompt.md
-├── gemini-prompt.md
-├── project-summary.md
-├── route-map.md
-└── file-tree.md
+└── gemini-prompt.md
 ```
 
-## Project Status
+Example run against a real Next.js app:
 
-The project is under active development. The current focus is integrating the analysis pipeline, expanding engineering analyzers, and improving AI-generated audit quality.
+```
+$ npm run dev scan ../eduing-landing
 
-## Contributing
+🔍 Building AI Audit Package...
 
-Contributions, bug reports, feature requests, and engineering discussions are welcome. Please open an issue or submit a pull request.
+✓ AI_AUDIT_PACKAGE.md
+✓ audit-report.json
+
+Score: 79/100  (critical: 0, high: 0, medium: 1, low: 8)
+
+Audit completed.
+```
+
+## Architecture
+
+```
+Repository → Scanner → Framework Detection → AST Parser → Knowledge Graph
+    → Analyzers (circular deps, dead code, config) → Finding Engine
+    → Score Engine → Audit Report → Markdown / JSON / LLM Prompts
+```
+
+## Tests
+
+```bash
+npm test
+```
+
+Covers score-weighting edge cases, import path resolution (relative + alias), and false-positive prevention for framework convention files.
+
+## Not built yet
+
+Security/performance/accessibility analyzers, HTML/PDF export, CI integration, multi-language support beyond TS/JS. These are listed as future work, not shipped — the goal was a small set of analyzers that are actually correct over a longer list that mostly isn't.
+
+## Stack
+
+TypeScript, Node.js, Commander, Babel/ts-morph AST parsing, fast-glob, fs-extra.
 
 ## License
 
-MIT License
+MIT
