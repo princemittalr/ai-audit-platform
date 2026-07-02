@@ -1,2 +1,2 @@
-import "./cli/index.js";
+import "./apps/cli/index.js";
 //# sourceMappingURL=index.js.map

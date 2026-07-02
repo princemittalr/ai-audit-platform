@@ -1,15 +1,8 @@
 import fs from "fs-extra";
 import path from "path";
-import { AuditContext } from "../context/types.js";
-
-export async function generateAuditPackage(
-  outputDir: string,
-  context: AuditContext
-): Promise<void> {
-
-  await fs.ensureDir(outputDir);
-
-  const markdown = `# AI AUDIT PACKAGE
+export async function generateAuditPackage(outputDir, context) {
+    await fs.ensureDir(outputDir);
+    const markdown = `# AI AUDIT PACKAGE
 
 ==================================================
 PROJECT SUMMARY
@@ -68,10 +61,6 @@ Files: ${context.scan.totalFiles}
 
 Folders: ${context.scan.totalDirectories}
 `;
-
-  await fs.writeFile(
-    path.join(outputDir, "AI_AUDIT_PACKAGE.md"),
-    markdown,
-    "utf8"
-  );
+    await fs.writeFile(path.join(outputDir, "AI_AUDIT_PACKAGE.md"), markdown, "utf8");
 }
+//# sourceMappingURL=auditPackage.js.map

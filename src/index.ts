@@ -1,1 +1,1 @@
-import "./cli/index.js";
+import "./apps/cli/index.js";

@@ -1,12 +1,11 @@
 import { scanRepository } from "../core/scanner.js";
 import { detectFramework } from "../analyzers/frameworkDetector.js";
 import { analyzeProject } from "../analyzers/projectAnalyzer.js";
-import { AuditContext } from "./types.js";
+import type { AuditContext } from "./types.js";
 
 export async function buildContext(
   repository: string
 ): Promise<AuditContext> {
-
   const scan = await scanRepository(repository);
 
   const framework = await detectFramework(repository);
@@ -16,6 +15,6 @@ export async function buildContext(
   return {
     scan,
     framework,
-    analysis
+    analysis,
   };
 }
