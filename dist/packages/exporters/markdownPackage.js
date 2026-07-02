@@ -1,57 +1,41 @@
 import fs from "fs-extra";
 import path from "path";
 import { getSystemPrompt } from "../prompts/systemPrompt.js";
+import { buildRepositoryIndex } from "../core/indexBuilder.js";
+import { buildSourceSection } from "./sourceEmbedder.js";
 export async function generateMarkdownPackage(outputDir, context) {
     await fs.ensureDir(outputDir);
+    const repositoryIndex = await buildRepositoryIndex(context.scan.root);
+    const sourceSection = await buildSourceSection(context.scan.root, repositoryIndex);
     const markdown = `# AI AUDIT PACKAGE
 
----
-
 # PROJECT
-
-Repository
 
 ${context.scan.root}
 
 ---
 
-# TECH STACK
+Framework
 
-Framework: ${context.framework.framework}
+${context.framework.framework}
 
-Language: ${context.framework.language}
+Language
 
-Package Manager: ${context.framework.packageManager}
+${context.framework.language}
 
-CSS: ${context.framework.css}
+Files
 
-Version: ${context.framework.version}
+${context.scan.totalFiles}
 
----
+Folders
 
-# PROJECT ANALYSIS
+${context.scan.totalDirectories}
 
-App Router: ${context.analysis.appRouter}
-
-Pages Router: ${context.analysis.pagesRouter}
-
-API Routes: ${context.analysis.apiRoutes}
-
-Components: ${context.analysis.components}
-
-Hooks: ${context.analysis.hooks}
-
-Contexts: ${context.analysis.contexts}
-
-Middleware: ${context.analysis.middleware}
-
-Files: ${context.scan.totalFiles}
-
-Folders: ${context.scan.totalDirectories}
+${sourceSection}
 
 ---
 
-# AI SYSTEM PROMPT
+# SYSTEM PROMPT
 
 ${getSystemPrompt()}
 `;
