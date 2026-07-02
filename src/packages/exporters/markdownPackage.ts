@@ -2,9 +2,10 @@ import fs from "fs-extra";
 import path from "path";
 
 import { AuditContext } from "../context/types.js";
-import { getSystemPrompt } from "../prompts/systemPrompt.js";
 import { buildRepositoryIndex } from "../core/indexBuilder.js";
 import { buildSourceSection } from "./sourceEmbedder.js";
+import { getSystemPrompt } from "../prompts/systemPrompt.js";
+import { generateFindings } from "../analyzers/findingEngine.js";
 
 export async function generateMarkdownPackage(
   outputDir: string,
@@ -17,41 +18,60 @@ export async function generateMarkdownPackage(
     context.scan.root
   );
 
-  const sourceSection =
-    await buildSourceSection(
-      context.scan.root,
-      repositoryIndex
-    );
+  const sourceSection = await buildSourceSection(
+    context.scan.root,
+    repositoryIndex
+  );
+
+  const findings = generateFindings(context.analysis);
+
+  const findingsMarkdown =
+    findings.length === 0
+      ? "No findings generated."
+      : findings
+          .map(
+            f => `## ${f.severity} — ${f.title}
+
+**Category:** ${f.category}
+
+**Description:** ${f.description}
+
+**Recommendation:** ${f.recommendation}
+`
+          )
+          .join("\n---\n\n");
 
   const markdown = `# AI AUDIT PACKAGE
 
-# PROJECT
+## Project
 
-${context.scan.root}
+- Repository: ${context.scan.root}
+- Framework: ${context.framework.framework}
+- Language: ${context.framework.language}
+- Package Manager: ${context.framework.packageManager}
+- CSS: ${context.framework.css}
 
 ---
 
-Framework
+## Repository Statistics
 
-${context.framework.framework}
+- Files: ${context.scan.totalFiles}
+- Folders: ${context.scan.totalDirectories}
+- Components: ${context.analysis.components}
+- Hooks: ${context.analysis.hooks}
+- Context Usage: ${context.analysis.contexts}
 
-Language
+---
 
-${context.framework.language}
+# Engineering Findings
 
-Files
-
-${context.scan.totalFiles}
-
-Folders
-
-${context.scan.totalDirectories}
+${findingsMarkdown}
 
 ${sourceSection}
 
 ---
 
-# SYSTEM PROMPT
+# AI System Prompt
 
 ${getSystemPrompt()}
 `;
@@ -61,5 +81,4 @@ ${getSystemPrompt()}
     markdown,
     "utf8"
   );
-
 }
